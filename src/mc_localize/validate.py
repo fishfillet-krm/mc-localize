@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import re
 
 from mc_localize.catalog import CatalogEntry
-from mc_localize.export_workfiles import select_export_entries
+from mc_localize.selection import select_export_entries
 
 
 PLACEHOLDER_RE = re.compile(r"(%(?:\d+\$)?[sdif])|(\{\d+\})|(§.)")
