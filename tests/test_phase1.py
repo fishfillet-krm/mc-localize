@@ -30,12 +30,17 @@ class Phase1Tests(unittest.TestCase):
                     "assets/example/lang/en_us.json",
                     json.dumps({"item.example.widget": "Widget %s"}),
                 )
+                archive.writestr(
+                    "assets/example/lang/ja_jp.json",
+                    json.dumps({"item.example.widget": "ウィジェット %s"}),
+                )
 
-            entries, metadata = scan_instance(root)
+            entries, metadata = scan_instance(root, target_locale="ja_jp")
             self.assertEqual(metadata["pack_format"], 8)
             self.assertEqual(len(entries), 1)
             self.assertEqual(metadata["summary"]["translatable_entries"], 1)
             self.assertEqual(metadata["summary"]["error_entries"], 0)
+            self.assertEqual(metadata["summary"]["entries_with_existing_target"], 1)
 
             catalog_path = root / "work" / "catalog.jsonl"
             write_jsonl(catalog_path, entries)
@@ -46,6 +51,13 @@ class Phase1Tests(unittest.TestCase):
             csv_path = export_dir / "strings.csv"
             with csv_path.open("r", encoding="utf-8-sig", newline="") as handle:
                 rows = list(csv.DictReader(handle))
+            self.assertEqual(rows[0]["key_prefix"], "item.example")
+            self.assertEqual(rows[0]["inferred_category"], "item")
+            self.assertEqual(rows[0]["has_existing_target"], "yes")
+            self.assertEqual(rows[0]["target_matches_source"], "no")
+            self.assertEqual(rows[0]["source_path"], "mods/example.jar")
+            self.assertEqual(rows[0]["entry_path"], "assets/example/lang/en_us.json")
+            self.assertEqual(rows[0]["existing_target_text"], "ウィジェット %s")
             rows[0]["translated_text"] = "ウィジェット %s"
             with csv_path.open("w", encoding="utf-8-sig", newline="") as handle:
                 writer = csv.DictWriter(handle, fieldnames=rows[0].keys())
