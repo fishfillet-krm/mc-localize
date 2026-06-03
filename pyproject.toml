@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mc-localize"
+version = "0.1.0"
+description = "Extract localization work files from Minecraft modded instances and build resource packs."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "mc-localize contributors" }
+]
+dependencies = []
+
+[project.scripts]
+mc-localize = "mc_localize.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

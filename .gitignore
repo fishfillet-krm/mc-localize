@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Local generated data
+work/
+dist/
+build/
+
+# Minecraft/modpack artifacts
+*.jar
+*.zip
+*.mrpack
+*.curseforge
+
+# Secrets and local environment
+.env
+.env.*
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
