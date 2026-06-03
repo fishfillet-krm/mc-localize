@@ -5,8 +5,8 @@ from pathlib import Path
 import shutil
 
 from mc_localize.catalog import CatalogEntry
-from mc_localize.export_workfiles import select_export_entries
 from mc_localize.install_guide import write_install_guide
+from mc_localize.selection import select_export_entries
 
 
 def build_resource_pack(

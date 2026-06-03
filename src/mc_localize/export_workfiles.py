@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 
 from mc_localize.catalog import CatalogEntry
+from mc_localize.reports import summarize_export
+from mc_localize.selection import select_export_entries
 
 
 CSV_COLUMNS = ["id", "source_type", "namespace", "key", "source_text", "translated_text", "context", "notes"]
@@ -57,16 +59,5 @@ def export_workfiles(entries: list[CatalogEntry], out_dir: Path, target_locale: 
             )
             handle.write("\n")
 
-    return {"csv": str(csv_path), "jsonl": str(jsonl_path), "count": len(exported)}
+    return {"csv": str(csv_path), "jsonl": str(jsonl_path), "count": len(exported), "summary": summarize_export(entries, len(exported))}
 
-
-def select_export_entries(entries: list[CatalogEntry]) -> list[CatalogEntry]:
-    by_output_key: dict[tuple[str, str, str], CatalogEntry] = {}
-    for entry in entries:
-        if entry.output_strategy != "resource_pack_lang":
-            continue
-        output_key = (entry.output_strategy, entry.namespace, entry.key)
-        current = by_output_key.get(output_key)
-        if current is None or entry.priority > current.priority:
-            by_output_key[output_key] = entry
-    return sorted(by_output_key.values(), key=lambda entry: (entry.namespace, entry.key, entry.id))

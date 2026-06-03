@@ -33,6 +33,8 @@ class Phase1Tests(unittest.TestCase):
             entries, metadata = scan_instance(root)
             self.assertEqual(metadata["pack_format"], 8)
             self.assertEqual(len(entries), 1)
+            self.assertEqual(metadata["summary"]["translatable_entries"], 1)
+            self.assertEqual(metadata["summary"]["error_entries"], 0)
 
             catalog_path = root / "work" / "catalog.jsonl"
             write_jsonl(catalog_path, entries)
@@ -56,6 +58,25 @@ class Phase1Tests(unittest.TestCase):
             self.assertTrue(lang_path.is_file())
             self.assertTrue(Path(result["zip"]).is_file())
             self.assertTrue(Path(result["install_guide"]).is_file())
+
+    def test_scan_reports_invalid_language_json_without_stopping(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mods = root / ".minecraft" / "mods"
+            mods.mkdir(parents=True)
+            with ZipFile(mods / "broken.jar", "w") as archive:
+                archive.writestr("assets/broken/lang/en_us.json", "{\n// nope\n}")
+            with ZipFile(mods / "good.jar", "w") as archive:
+                archive.writestr("assets/good/lang/en_us.json", json.dumps({"item.good.thing": "Thing"}))
+
+            entries, metadata = scan_instance(root, minecraft_version="1.18.2")
+
+            self.assertEqual(metadata["summary"]["translatable_entries"], 1)
+            self.assertEqual(metadata["summary"]["error_entries"], 1)
+            self.assertEqual(metadata["summary"]["source_types"]["error"], 1)
+            self.assertEqual(metadata["summary"]["source_types"]["lang_json"], 1)
+            error = next(entry for entry in entries if entry.source_type == "error")
+            self.assertIn("could not be parsed", error.notes[0])
 
 
 if __name__ == "__main__":
