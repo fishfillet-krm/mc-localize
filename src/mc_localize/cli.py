@@ -9,6 +9,7 @@ from mc_localize.build_resource_pack import build_resource_pack
 from mc_localize.catalog import read_jsonl, write_jsonl
 from mc_localize.export_workfiles import export_workfiles
 from mc_localize.instance import detect_instance
+from mc_localize.reports import compare_catalogs, write_json_report, write_text_report
 from mc_localize.scan import scan_instance
 from mc_localize.translations import read_translations
 from mc_localize.validate import validate_translations
@@ -34,6 +35,8 @@ def _build_parser() -> argparse.ArgumentParser:
     scan.add_argument("--source-locale", default="en_us")
     scan.add_argument("--minecraft-version")
     scan.add_argument("--pack-format", type=int)
+    scan.add_argument("--report-out", type=Path, help="write a JSON scan report")
+    scan.add_argument("--text-report-out", type=Path, help="write a human-readable scan report")
     scan.set_defaults(func=_cmd_scan)
 
     export = subcommands.add_parser("export", help="export translation work files")
@@ -58,6 +61,13 @@ def _build_parser() -> argparse.ArgumentParser:
     build.add_argument("--pack-format", type=int)
     build.set_defaults(func=_cmd_build)
 
+    compare = subcommands.add_parser("compare", help="compare two catalog.jsonl files")
+    compare.add_argument("--before", required=True, type=Path)
+    compare.add_argument("--after", required=True, type=Path)
+    compare.add_argument("--report-out", type=Path, help="write a JSON compare report")
+    compare.add_argument("--text-report-out", type=Path, help="write a human-readable compare report")
+    compare.set_defaults(func=_cmd_compare)
+
     return parser
 
 
@@ -69,7 +79,14 @@ def _cmd_scan(args: argparse.Namespace) -> int:
         pack_format=args.pack_format,
     )
     count = write_jsonl(args.out, entries)
-    print(json.dumps({"catalog": str(args.out), "rows": count, **metadata}, ensure_ascii=False, indent=2))
+    result = {"catalog": str(args.out), "rows": count, **metadata}
+    if args.report_out:
+        write_json_report(args.report_out, result)
+        result["report"] = str(args.report_out)
+    if args.text_report_out:
+        write_text_report(args.text_report_out, "Scan Report", result)
+        result["text_report"] = str(args.text_report_out)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 
 
@@ -115,5 +132,19 @@ def _cmd_build(args: argparse.Namespace) -> int:
         resourcepacks_dir=resourcepacks_dir,
     )
     result["warnings"] = validation.warnings
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
+def _cmd_compare(args: argparse.Namespace) -> int:
+    before = read_jsonl(args.before)
+    after = read_jsonl(args.after)
+    result = compare_catalogs(before, after)
+    if args.report_out:
+        write_json_report(args.report_out, result)
+        result["report"] = str(args.report_out)
+    if args.text_report_out:
+        write_text_report(args.text_report_out, "Catalog Compare Report", result)
+        result["text_report"] = str(args.text_report_out)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0

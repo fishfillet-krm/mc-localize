@@ -10,6 +10,7 @@ from zipfile import ZipFile
 from mc_localize.build_resource_pack import build_resource_pack
 from mc_localize.catalog import read_jsonl, write_jsonl
 from mc_localize.export_workfiles import export_workfiles
+from mc_localize.reports import compare_catalogs, format_text_report
 from mc_localize.scan import scan_instance
 
 
@@ -77,6 +78,26 @@ class Phase1Tests(unittest.TestCase):
             self.assertEqual(metadata["summary"]["source_types"]["lang_json"], 1)
             error = next(entry for entry in entries if entry.source_type == "error")
             self.assertIn("could not be parsed", error.notes[0])
+
+    def test_compare_catalogs_reports_added_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mods = root / ".minecraft" / "mods"
+            mods.mkdir(parents=True)
+            with ZipFile(mods / "before.jar", "w") as archive:
+                archive.writestr("assets/example/lang/en_us.json", json.dumps({"item.example.one": "One"}))
+
+            before, _ = scan_instance(root, minecraft_version="1.18.2")
+
+            with ZipFile(mods / "after.jar", "w") as archive:
+                archive.writestr("assets/example2/lang/en_us.json", json.dumps({"item.example2.two": "Two"}))
+
+            after, _ = scan_instance(root, minecraft_version="1.18.2")
+            report = compare_catalogs(before, after)
+
+            self.assertEqual(report["added_entries"], 1)
+            self.assertEqual(report["removed_entries"], 0)
+            self.assertIn("added_entries: 1", format_text_report("Diff", report))
 
 
 if __name__ == "__main__":
