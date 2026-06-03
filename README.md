@@ -29,6 +29,20 @@ python -m mc_localize build --catalog work/catalog.jsonl --translations work/exp
 
 After `build`, copy the generated zip into the instance's `resourcepacks` directory and enable it in Minecraft or your launcher.
 
+## Scan Reports
+
+Use report outputs when you want to keep a record of what was extracted:
+
+```powershell
+python -m mc_localize scan --instance "D:\Document\Prism\instances\FTB StoneBlock 3" --out work/before-launch.jsonl --report-out work/reports/before-launch.json --text-report-out work/reports/before-launch.txt
+```
+
+To compare two scans, for example before and after launching Minecraft once:
+
+```powershell
+python -m mc_localize compare --before work/before-launch.jsonl --after work/after-launch.jsonl --report-out work/reports/launch-diff.json --text-report-out work/reports/launch-diff.txt
+```
+
 ## Development
 
 ```powershell
