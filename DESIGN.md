@@ -209,7 +209,7 @@ Recommended default:
 CSV columns:
 
 ```text
-id,source_type,namespace,key,source_text,translated_text,context,notes
+id,source_type,namespace,key,key_prefix,inferred_category,source_text,has_existing_target,existing_target_text,target_matches_source,translated_text,source_path,entry_path,context,notes
 ```
 
 JSONL row:
@@ -218,10 +218,15 @@ JSONL row:
 {
   "id": "same id as catalog",
   "source_text": "Shaft",
+  "has_existing_target": true,
+  "existing_target_text": "シャフト",
+  "target_matches_source": false,
   "translated_text": "",
   "context": {
     "namespace": "create",
     "key": "block.create.shaft",
+    "key_prefix": "block.create",
+    "inferred_category": "block",
     "source_type": "lang_json"
   },
   "notes": []

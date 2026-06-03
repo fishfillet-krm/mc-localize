@@ -21,7 +21,7 @@ Phase 1 focuses on:
 ## Example
 
 ```powershell
-python -m mc_localize scan --instance "D:\Document\Prism\instances\FTB StoneBlock 3" --out work/catalog.jsonl
+python -m mc_localize scan --instance "D:\Document\Prism\instances\FTB StoneBlock 3" --out work/catalog.jsonl --target-locale ja_jp
 python -m mc_localize export --catalog work/catalog.jsonl --target-locale ja_jp --out work/export/ja_jp
 python -m mc_localize validate --catalog work/catalog.jsonl --translations work/export/ja_jp/strings.csv --target-locale ja_jp
 python -m mc_localize build --catalog work/catalog.jsonl --translations work/export/ja_jp/strings.csv --target-locale ja_jp --out dist/ftb-stoneblock-3-ja_jp
@@ -34,7 +34,7 @@ After `build`, copy the generated zip into the instance's `resourcepacks` direct
 Use report outputs when you want to keep a record of what was extracted:
 
 ```powershell
-python -m mc_localize scan --instance "D:\Document\Prism\instances\FTB StoneBlock 3" --out work/before-launch.jsonl --report-out work/reports/before-launch.json --text-report-out work/reports/before-launch.txt
+python -m mc_localize scan --instance "D:\Document\Prism\instances\FTB StoneBlock 3" --out work/before-launch.jsonl --target-locale ja_jp --report-out work/reports/before-launch.json --text-report-out work/reports/before-launch.txt
 ```
 
 To compare two scans, for example before and after launching Minecraft once:
@@ -42,6 +42,19 @@ To compare two scans, for example before and after launching Minecraft once:
 ```powershell
 python -m mc_localize compare --before work/before-launch.jsonl --after work/after-launch.jsonl --report-out work/reports/launch-diff.json --text-report-out work/reports/launch-diff.txt
 ```
+
+## Export Context
+
+Exported work files include columns for filtering and review:
+
+- `namespace`: the mod/resource namespace.
+- `key`: the original language key.
+- `key_prefix`: the first two key segments, useful for grouping.
+- `inferred_category`: a best-effort category such as `item`, `block`, `entity`, `gui`, or `tooltip`.
+- `source_path` and `entry_path`: where the source text came from.
+- `existing_target_text`: existing target-locale text when `scan --target-locale` found one.
+
+Existing target text is exported as reference data. It is not copied into `translated_text` automatically.
 
 ## Development
 

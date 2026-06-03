@@ -33,6 +33,7 @@ def _build_parser() -> argparse.ArgumentParser:
     scan.add_argument("--instance", required=True, type=Path)
     scan.add_argument("--out", required=True, type=Path)
     scan.add_argument("--source-locale", default="en_us")
+    scan.add_argument("--target-locale", help="also collect existing target-locale text as export metadata")
     scan.add_argument("--minecraft-version")
     scan.add_argument("--pack-format", type=int)
     scan.add_argument("--report-out", type=Path, help="write a JSON scan report")
@@ -75,6 +76,7 @@ def _cmd_scan(args: argparse.Namespace) -> int:
     entries, metadata = scan_instance(
         args.instance,
         source_locale=args.source_locale,
+        target_locale=args.target_locale,
         minecraft_version=args.minecraft_version,
         pack_format=args.pack_format,
     )

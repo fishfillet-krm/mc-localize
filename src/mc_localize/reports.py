@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 from mc_localize.catalog import CatalogEntry
+from mc_localize.lang_metadata import existing_target_text
 from mc_localize.selection import select_export_entries
 
 
@@ -13,6 +14,7 @@ def summarize_catalog(entries: list[CatalogEntry]) -> dict:
     errors = [entry for entry in entries if entry.source_type == "error"]
     supported = [entry for entry in entries if entry.output_strategy == "resource_pack_lang"]
     overridden = len(supported) - len(active_entries)
+    existing_target_count = sum(1 for entry in active_entries if existing_target_text(entry))
 
     return {
         "rows": len(entries),
@@ -20,6 +22,7 @@ def summarize_catalog(entries: list[CatalogEntry]) -> dict:
         "exportable_entries": len(active_entries),
         "overridden_entries": overridden,
         "error_entries": len(errors),
+        "entries_with_existing_target": existing_target_count,
         "source_types": _count_by(entries, "source_type"),
         "namespace_count": len({entry.namespace for entry in supported}),
         "top_namespaces": _top_counts(supported, "namespace", limit=20),
@@ -41,6 +44,7 @@ def summarize_export(entries: list[CatalogEntry], exported_count: int) -> dict:
         "exported_entries": exported_count,
         "overridden_entries": catalog["overridden_entries"],
         "error_entries": catalog["error_entries"],
+        "entries_with_existing_target": catalog["entries_with_existing_target"],
     }
 
 
@@ -150,6 +154,7 @@ def _append_summary(lines: list[str], summary: dict, indent: str = "") -> None:
         "exportable_entries",
         "overridden_entries",
         "error_entries",
+        "entries_with_existing_target",
         "namespace_count",
     ]:
         if key in summary:
