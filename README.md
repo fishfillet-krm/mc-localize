@@ -29,6 +29,15 @@ python -m mc_localize build --catalog work/catalog.jsonl --translations work/exp
 
 After `build`, copy the generated zip into the instance's `resourcepacks` directory and enable it in Minecraft or your launcher.
 
+By default, `build` only writes rows with `translated_text`. You can choose a fallback for untranslated rows:
+
+```powershell
+python -m mc_localize build --catalog work/catalog.jsonl --translations work/export/ja_jp/strings.csv --target-locale ja_jp --out dist/pack-ja_jp --untranslated existing-target
+python -m mc_localize build --catalog work/catalog.jsonl --translations work/export/ja_jp/strings.csv --target-locale ja_jp --out dist/debug-ja_jp --untranslated source
+```
+
+Use `existing-target` to preserve already bundled `ja_jp` entries collected by `scan --target-locale ja_jp`. Use `source` only for debug packs because it writes untranslated English text into the target locale.
+
 ## Scan Reports
 
 Use report outputs when you want to keep a record of what was extracted:

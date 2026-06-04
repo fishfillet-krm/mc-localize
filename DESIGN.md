@@ -60,6 +60,7 @@ This instance is a fixture for design and testing, not the identity of the proje
 5. `build`
    - Generate a resource pack from the translated files.
    - Generate optional overlay files for formats that cannot be represented by a resource pack alone.
+   - By default, skip untranslated rows. Optionally use existing target-locale text or source text as a fallback.
 
 6. Manual installation
    - The user copies the generated pack into the target instance's `resourcepacks` directory or otherwise installs it using their launcher.
@@ -253,6 +254,7 @@ The build command consumes:
 - Output options.
 
 The build command should not require a translation memory or any machine translation provider.
+Untranslated rows should default to being omitted from generated language files. The user may explicitly choose a fallback strategy such as existing target-locale text or source text for debug/resource-pack preview builds.
 
 ## Generated Outputs
 
