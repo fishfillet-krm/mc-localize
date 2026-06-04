@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import sys
 
-from mc_localize.build_resource_pack import build_resource_pack
+from mc_localize.build_resource_pack import BuildOptions, build_resource_pack
 from mc_localize.catalog import read_jsonl, write_jsonl
 from mc_localize.export_workfiles import ExportOptions, export_workfiles
 from mc_localize.instance import detect_instance
@@ -69,6 +69,12 @@ def _build_parser() -> argparse.ArgumentParser:
     build.add_argument("--instance", type=Path)
     build.add_argument("--minecraft-version")
     build.add_argument("--pack-format", type=int)
+    build.add_argument(
+        "--untranslated",
+        choices=["skip", "existing-target", "source"],
+        default="skip",
+        help="how to handle rows without translated_text",
+    )
     build.set_defaults(func=_cmd_build)
 
     compare = subcommands.add_parser("compare", help="compare two catalog.jsonl files")
@@ -153,8 +159,11 @@ def _cmd_build(args: argparse.Namespace) -> int:
         out_dir=args.out,
         pack_format=pack_format,
         resourcepacks_dir=resourcepacks_dir,
+        options=BuildOptions(untranslated=args.untranslated),
     )
-    result["warnings"] = validation.warnings
+    result["validation_warning_count"] = len(validation.warnings)
+    result["warnings"] = validation.warnings[:20]
+    result["warnings_truncated"] = len(validation.warnings) > 20
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 

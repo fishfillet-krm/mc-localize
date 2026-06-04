@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from zipfile import ZipFile
 
-from mc_localize.build_resource_pack import build_resource_pack
+from mc_localize.build_resource_pack import BuildOptions, build_resource_pack
 from mc_localize.catalog import read_jsonl, write_jsonl
 from mc_localize.export_workfiles import ExportOptions, export_workfiles
 from mc_localize.reports import compare_catalogs, format_text_report
@@ -71,6 +71,48 @@ class Phase1Tests(unittest.TestCase):
             self.assertTrue(lang_path.is_file())
             self.assertTrue(Path(result["zip"]).is_file())
             self.assertTrue(Path(result["install_guide"]).is_file())
+
+    def test_build_can_use_existing_target_for_untranslated_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mods = root / ".minecraft" / "mods"
+            mods.mkdir(parents=True)
+            with ZipFile(mods / "example.jar", "w") as archive:
+                archive.writestr(
+                    "assets/example/lang/en_us.json",
+                    json.dumps(
+                        {
+                            "item.example.already": "Already translated",
+                            "item.example.new": "New text",
+                        }
+                    ),
+                )
+                archive.writestr(
+                    "assets/example/lang/ja_jp.json",
+                    json.dumps({"item.example.already": "翻訳済み"}),
+                )
+
+            entries, _ = scan_instance(root, minecraft_version="1.18.2", target_locale="ja_jp")
+            translations = {
+                entry.id: "新規テキスト"
+                for entry in entries
+                if entry.key == "item.example.new"
+            }
+            result = build_resource_pack(
+                entries,
+                translations,
+                "ja_jp",
+                root / "dist" / "example-ja_jp",
+                8,
+                options=BuildOptions(untranslated="existing-target"),
+            )
+
+            lang_path = root / "dist" / "example-ja_jp" / "assets" / "example" / "lang" / "ja_jp.json"
+            data = json.loads(lang_path.read_text(encoding="utf-8"))
+            self.assertEqual(data["item.example.already"], "翻訳済み")
+            self.assertEqual(data["item.example.new"], "新規テキスト")
+            self.assertEqual(result["used_existing_target_entries"], 1)
+            self.assertEqual(result["used_translated_entries"], 1)
 
     def test_export_filters_and_namespace_split(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

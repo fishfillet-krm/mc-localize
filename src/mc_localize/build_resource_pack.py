@@ -1,12 +1,19 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 import json
 from pathlib import Path
 import shutil
 
 from mc_localize.catalog import CatalogEntry
 from mc_localize.install_guide import write_install_guide
+from mc_localize.lang_metadata import existing_target_text
 from mc_localize.selection import select_export_entries
+
+
+@dataclass(frozen=True, slots=True)
+class BuildOptions:
+    untranslated: str = "skip"
 
 
 def build_resource_pack(
@@ -16,10 +23,16 @@ def build_resource_pack(
     out_dir: Path,
     pack_format: int,
     resourcepacks_dir: Path | None = None,
+    options: BuildOptions | None = None,
 ) -> dict:
+    options = options or BuildOptions()
     out_dir.mkdir(parents=True, exist_ok=True)
     lang_by_namespace: dict[str, dict[str, str]] = {}
     unsupported_count = 0
+    used_translated = 0
+    used_existing_target = 0
+    used_source = 0
+    skipped_untranslated = 0
 
     supported_ids = {entry.id for entry in select_export_entries(entries)}
     unsupported_count = len([entry for entry in entries if entry.output_strategy != "resource_pack_lang"])
@@ -27,10 +40,21 @@ def build_resource_pack(
     for entry in entries:
         if entry.id not in supported_ids:
             continue
-        translated = translations.get(entry.id, "")
-        if not translated:
+        translated = translations.get(entry.id, "").strip()
+        output_text = translated
+        if output_text:
+            used_translated += 1
+        elif options.untranslated == "existing-target":
+            output_text = existing_target_text(entry)
+            if output_text:
+                used_existing_target += 1
+        elif options.untranslated == "source":
+            output_text = entry.source_text
+            used_source += 1
+        if not output_text:
+            skipped_untranslated += 1
             continue
-        lang_by_namespace.setdefault(entry.namespace, {})[entry.key] = translated
+        lang_by_namespace.setdefault(entry.namespace, {})[entry.key] = output_text
 
     for namespace, lang_values in sorted(lang_by_namespace.items()):
         lang_dir = out_dir / "assets" / namespace / "lang"
@@ -63,5 +87,10 @@ def build_resource_pack(
         "install_guide": str(install_path),
         "namespaces": len(lang_by_namespace),
         "translated_entries": sum(len(values) for values in lang_by_namespace.values()),
+        "used_translated_entries": used_translated,
+        "used_existing_target_entries": used_existing_target,
+        "used_source_entries": used_source,
+        "skipped_untranslated_entries": skipped_untranslated,
         "unsupported_entries": unsupported_count,
+        "untranslated_policy": options.untranslated,
     }
