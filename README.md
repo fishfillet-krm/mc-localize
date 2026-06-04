@@ -56,6 +56,14 @@ Exported work files include columns for filtering and review:
 
 Existing target text is exported as reference data. It is not copied into `translated_text` automatically.
 
+You can filter or split exports to keep translation batches manageable:
+
+```powershell
+python -m mc_localize export --catalog work/catalog.jsonl --target-locale ja_jp --out work/export/missing-blocks --category block --missing-target-only
+python -m mc_localize export --catalog work/catalog.jsonl --target-locale ja_jp --out work/export/chipped --namespace chipped
+python -m mc_localize export --catalog work/catalog.jsonl --target-locale ja_jp --out work/export/by-namespace --missing-target-only --split-by namespace
+```
+
 ## Development
 
 ```powershell

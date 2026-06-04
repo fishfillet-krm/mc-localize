@@ -9,7 +9,7 @@ from zipfile import ZipFile
 
 from mc_localize.build_resource_pack import build_resource_pack
 from mc_localize.catalog import read_jsonl, write_jsonl
-from mc_localize.export_workfiles import export_workfiles
+from mc_localize.export_workfiles import ExportOptions, export_workfiles
 from mc_localize.reports import compare_catalogs, format_text_report
 from mc_localize.scan import scan_instance
 
@@ -71,6 +71,43 @@ class Phase1Tests(unittest.TestCase):
             self.assertTrue(lang_path.is_file())
             self.assertTrue(Path(result["zip"]).is_file())
             self.assertTrue(Path(result["install_guide"]).is_file())
+
+    def test_export_filters_and_namespace_split(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mods = root / ".minecraft" / "mods"
+            mods.mkdir(parents=True)
+            with ZipFile(mods / "example.jar", "w") as archive:
+                archive.writestr(
+                    "assets/example/lang/en_us.json",
+                    json.dumps(
+                        {
+                            "block.example.machine": "Machine",
+                            "item.example.widget": "Widget",
+                        }
+                    ),
+                )
+                archive.writestr(
+                    "assets/example/lang/ja_jp.json",
+                    json.dumps({"item.example.widget": "Widget"}),
+                )
+            with ZipFile(mods / "other.jar", "w") as archive:
+                archive.writestr("assets/other/lang/en_us.json", json.dumps({"block.other.thing": "Thing"}))
+
+            entries, _ = scan_instance(root, minecraft_version="1.18.2", target_locale="ja_jp")
+            out_dir = root / "work" / "filtered"
+            result = export_workfiles(
+                entries,
+                out_dir,
+                "ja_jp",
+                options=ExportOptions(categories={"block"}, missing_target_only=True, split_by="namespace"),
+            )
+
+            self.assertEqual(result["count"], 2)
+            self.assertEqual({item["namespace"] for item in result["split_outputs"]}, {"example", "other"})
+            with (out_dir / "strings.csv").open("r", encoding="utf-8-sig", newline="") as handle:
+                rows = list(csv.DictReader(handle))
+            self.assertEqual({row["key"] for row in rows}, {"block.example.machine", "block.other.thing"})
 
     def test_scan_reports_invalid_language_json_without_stopping(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

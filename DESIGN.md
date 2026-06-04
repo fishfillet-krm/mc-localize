@@ -235,6 +235,14 @@ JSONL row:
 
 The tool should preserve unknown columns in CSV where practical, so users can add review notes without losing them during round trips.
 
+Exports should support common batching filters:
+
+- Include only selected namespaces.
+- Include only selected inferred categories.
+- Include only rows without existing target-locale text.
+- Include only rows where the existing target-locale text is identical to the source text.
+- Optionally split output files by namespace.
+
 ## Build Inputs
 
 The build command consumes:

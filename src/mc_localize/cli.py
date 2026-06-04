@@ -7,7 +7,7 @@ import sys
 
 from mc_localize.build_resource_pack import build_resource_pack
 from mc_localize.catalog import read_jsonl, write_jsonl
-from mc_localize.export_workfiles import export_workfiles
+from mc_localize.export_workfiles import ExportOptions, export_workfiles
 from mc_localize.instance import detect_instance
 from mc_localize.reports import compare_catalogs, write_json_report, write_text_report
 from mc_localize.scan import scan_instance
@@ -44,6 +44,15 @@ def _build_parser() -> argparse.ArgumentParser:
     export.add_argument("--catalog", required=True, type=Path)
     export.add_argument("--target-locale", required=True)
     export.add_argument("--out", required=True, type=Path)
+    export.add_argument("--namespace", action="append", default=[], help="only export a namespace; may be repeated")
+    export.add_argument("--category", action="append", default=[], help="only export an inferred category; may be repeated")
+    export.add_argument("--missing-target-only", action="store_true", help="only export rows without existing target text")
+    export.add_argument(
+        "--target-matches-source-only",
+        action="store_true",
+        help="only export rows where existing target text equals source text",
+    )
+    export.add_argument("--split-by", choices=["namespace"], help="also write split work files")
     export.set_defaults(func=_cmd_export)
 
     validate = subcommands.add_parser("validate", help="validate translated work files")
@@ -94,8 +103,20 @@ def _cmd_scan(args: argparse.Namespace) -> int:
 
 def _cmd_export(args: argparse.Namespace) -> int:
     entries = read_jsonl(args.catalog)
-    result = export_workfiles(entries, args.out, args.target_locale)
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    options = ExportOptions(
+        namespaces=set(args.namespace),
+        categories=set(args.category),
+        missing_target_only=args.missing_target_only,
+        target_matches_source_only=args.target_matches_source_only,
+        split_by=args.split_by,
+    )
+    result = export_workfiles(entries, args.out, args.target_locale, options=options)
+    output = dict(result)
+    if output.get("split_outputs"):
+        output["split_output_count"] = len(output["split_outputs"])
+        output["split_outputs"] = output["split_outputs"][:20]
+        output["split_outputs_truncated"] = output["split_output_count"] > 20
+    print(json.dumps(output, ensure_ascii=False, indent=2))
     return 0
 
 
